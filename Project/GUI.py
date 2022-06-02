@@ -1,5 +1,5 @@
-from Tkinter import *
-from Tkinter import PhotoImage
+from tkinter import *
+from tkinter import PhotoImage
 from random import *
 ###################
 

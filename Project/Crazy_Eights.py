@@ -1,9 +1,11 @@
 #EH AH Computing Project
 
 
-from Tkinter import *
-from Tkinter import PhotoImage
+from tkinter import *
+from tkinter import PhotoImage
 from winsound import *
+
+
 
 main = Tk()
 main.title('Splash')
@@ -103,16 +105,7 @@ def startgame():
 namebox = dynamics()
 highscores()
 
-'''def open():#called via main game (when finished)
-    global namebox
-    namebox = dynamics()
-    highscores()'''
-
-with open('splash.wav','rb') as f:
-    data = f.read()
 PlaySound("splash.wav", SND_LOOP | SND_FILENAME | SND_ASYNC)
 
-
-#   sound not fkn working!
 
 main.mainloop()
