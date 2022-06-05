@@ -99,6 +99,10 @@ def startgame():
     while len(text) < 20:#input validation to ensure names fit in Hiscore box
         text = text.lower()
         main.destroy()
+        '''songs = ["S01.wav","S02.wav","S03.wav","S04.wav","S05.wav"]
+        from GUI import randint # play a random bgm from soundtrack
+        PlaySound("wav/"+songs[randint(0,4)], SND_LOOP | SND_FILENAME | SND_ASYNC)'''
+        PlaySound(None, SND_ASYNC) # stop playback
         from GUI import rungame
         rungame(text)
 
@@ -109,3 +113,4 @@ PlaySound("splash.wav", SND_LOOP | SND_FILENAME | SND_ASYNC)
 
 
 main.mainloop()
+#TO COMPILE: PyInstaller C:\Users\Admin\Documents\GitHub\Crazy-Eights\Project\Crazy_Eights.py -F --onefile

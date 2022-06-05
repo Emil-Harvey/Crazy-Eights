@@ -1,2 +1,5 @@
 #ignore pycharm stuff
 Project/.idea/*
+*.pyc
+
+Project/dist/*
