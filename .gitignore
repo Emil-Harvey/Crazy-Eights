@@ -3,3 +3,4 @@ Project/.idea/*
 *.pyc
 
 Project/dist/*
+Project/wav/*

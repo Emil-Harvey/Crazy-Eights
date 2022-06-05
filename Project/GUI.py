@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import PhotoImage
 from random import *
 from winsound import *
+from Extras import Marquee
 ###################
 
 def createdeck(bg1,bg2,bg3,bg4,bg5):
@@ -56,12 +57,22 @@ root.attributes("-fullscreen", False)
 root.iconbitmap('C8.ico')
 
 header = StringVar()
+ticker = StringVar()
+ticker.set("hello world")
+marquee = None
+
 def upHUD (header, hand, discards):    #this displays and updates the HUD
     global score
     if hand is not None and discards is not None: htext = ("Name:",name,"\t\tHand size:",len(hand),"\tscore:",score, "\t\tDiscard pile size:",len(discards))
     else: htext = ("Name:",name,"\t\tHand size:",7,"\tscore:",0, "\t\tDiscard pile size:",1)
     header.set(''.join(str(i)+' ' for i in htext)[:-1]) #removes curly brackets
-    
+
+def notify(text):
+    print(text)
+    ticker.set(text)
+    marquee.itemconfigure(marquee.text, text=ticker.get())
+
+
 def genGUI(header):
     
 # create all of the main containers
@@ -77,9 +88,9 @@ def genGUI(header):
     center.grid(row=1, sticky="ns")
 
 # create the widgets for the top frame
-    title = Label(top_frame, text="CRAZY EIGHTS", bg='red3', fg ="ivory", height=1, relief="raised", borderwidth=2, font=("system", 24))
+    title = Label(top_frame, text=" CRAZY EIGHTS ", bg='red3', fg ="ivory", height=1, relief="raised", borderwidth=2, font=("system", 24))
     head = Label(top_frame, textvariable=header, bg='red3', fg ="ivory", width=90, height=2, relief="raised", borderwidth=2, font=("system", 16))
-    bQuit = Button(top_frame, text="Quit", font=("system", 12), height=2, command=lambda : lose())
+    bQuit = Button(top_frame, text="Quit", font=("system", 12), height=1, pady=6, padx=16, command=lambda : lose())
 
 # layout the widgets in the top frame
     title.grid(row=0)
@@ -104,10 +115,10 @@ def genGUI(header):
 
     return(cmid_frame,ctr_mid,ctr_right)
 
+
 #finalise program (create essential variables)
 
-cmid_frame,ctr_mid,ctr_right = genGUI(header)
-#this function cannot be called before pick() is defined
+cmid_frame,ctr_mid,ctr_right = genGUI(header) # this function can't be called before pick() is defined
 
 brn = PhotoImage(file="b.gif")
 oge = PhotoImage(file="o.gif")
@@ -158,7 +169,7 @@ def generateHand(deck):
     hand = []
     
     for cards in range(7):                            
-        rCID =  randint(0, len(deck)-1)#random card ID
+        rCID = randint(0, len(deck)-1)#random card ID
         card = deck[rCID]
         deck, hand = swap(card, deck, hand)# assigns 7 random cards to a hand
         
@@ -210,14 +221,14 @@ def currentCard(deck, discardpile):
     TCpic.image = TCphoto    #Top Card picture
     TCpic.grid(row =0, column =0,columnspan=5, sticky=N+S+E+W, padx=76, pady=20)
 
-    currentLabel = Label(ctr_right, text="Current face-up card", font=("system", 18), relief="groove",borderwidth=2)
+    currentLabel = Label(ctr_right, text=" Current face-up card ", font=("system", 18), relief="groove",borderwidth=2)
     currentLabel.grid(row=1,columnspan=5, pady =4)
 
     return(deck, discards)
 
 def playCom(hand, deck, currentcards):#when the COM chooses/places a card
     bEND.config(state = DISABLED)
-    print("the COM is thinking...")
+    notify("the COM is thinking...")
     root.after(1500)#some additional time is spent to make it more realistic and obvious that the computer is taking a turn
 
     currentcard = currentcards[-1]
@@ -238,19 +249,20 @@ def playCom(hand, deck, currentcards):#when the COM chooses/places a card
             if card[2] == currentcard[2] or card[0] == currentcard[0] or card[0]=="wild" or currentcard[0] =="wild":#if the elements/colours match or is wildcard
                 swap(card, hand, currentcards)#play this card
                 PlaySound(play_sfx[randint(4,6)], SND_NOSTOP | SND_FILENAME | SND_ASYNC)
-                print("COM has played ", card[0], card[2])
+                notify("COM has played a {} {}.".format(card[0],card[2]))
                 if card[2] == "+2": comP2 = True
                 
                 played = True
                 break
+            else:
+                #if no cards match, must pick up card
+                root.after(500)
+                swap(deck[-1], deck, hand)
+                PlaySound(take_sfx[randint(4,6)], SND_NOSTOP | SND_FILENAME | SND_ASYNC)
+                #print("COM has picked up ",deck[-1])
+                played = True
 
-        else:
-            #if no cards match, must pick up card
-            root.after(500)
-            swap(deck[-1], deck, hand)
-            PlaySound(take_sfx[randint(4,6)], SND_NOSTOP | SND_FILENAME | SND_ASYNC)
-            #print("COM has picked up ",deck[-1])
-            played = True
+    # reactivate player's hud <change this for multiplayer>
     deck, currentcards = currentCard(deck, currentcards)
     bPUC.config(state = NORMAL)
     player_cards = cmid_frame.grid_slaves()
@@ -266,12 +278,15 @@ def playCom(hand, deck, currentcards):#when the COM chooses/places a card
 def gen_UIbuttons(phand, deck, ctr_right, discards):#this was created to resolve parameter passing errors
     bPUC = Button(ctr_right, text="Pick up card", font=("system", 12), command=lambda : pick(phand, deck, discards), state = DISABLED)#bPUC: button to Pick Up Card
     bPUC.grid(row= 2, column = 0,pady = 20,ipadx = 20,ipady = 10)
+    bStart = Button(ctr_right, text="Start", font=("system", 12), command=lambda: showHand(phand))
+    bStart.grid(row=2, column=1, pady=20, ipadx=20, ipady=10)
     bEND = Button(ctr_right, text="End turn", font=("system", 12), command=lambda : playCom(chand, deck, discards,  ), state = DISABLED)
     bEND.grid(row= 2, column = 2,pady = 20,ipadx = 20,ipady = 10)
-    bStart = Button(ctr_right, text="Start", font=("system", 12), command=lambda : showHand(phand))
-    bStart.grid(row= 2, column = 1,pady = 20,ipadx = 20,ipady = 10)
-    
-    return(bStart,bEND, bPUC)
+
+    marquee = Marquee(ctr_right, text=ticker.get(), font=("system", 12), borderwidth=2, relief="sunken")
+    marquee.grid(row=3, columnspan=3, sticky=EW, pady=20)
+
+    return(bStart,bEND, bPUC, marquee)
     
 def pick(hand, pile, currentcards):
     top_card = currentcards[-1]
@@ -283,13 +298,13 @@ def pick(hand, pile, currentcards):
         card = pile[randomNO]#random card in the 'pick up' pile (deck[])
         pile, hand = swap(card, pile, hand)
         PlaySound(take_sfx[randint(0,3)], SND_NOSTOP | SND_FILENAME | SND_ASYNC)
-        print("you picked up a", card[0], card[2], "pile size:", len(pile))
+        notify("you picked up {} {}. pile size: {}.".format(card[0],card[2],len(pile)) )
         root.after(500)
 
     hand = showHand(hand)
     bEND.config(state = NORMAL) #the end turn button will be valid
         
-bStart, bEND, bPUC = gen_UIbuttons(phand, deck, ctr_right,discards)#generate buttons
+bStart, bEND, bPUC, marquee = gen_UIbuttons(phand, deck, ctr_right,discards)#generate buttons
    
 def playUSR(cardinfo, hand, deck, discards):#called when card is clicked
     cardnum = 0
@@ -305,7 +320,7 @@ def playUSR(cardinfo, hand, deck, discards):#called when card is clicked
         
     else:
         valid = False #input validation
-        print("that card cannot be played!!")
+        notify("that card cannot be played!!")
         box = Toplevel()
         box.minsize(250,30)
         box.title("Crazy Eights")
@@ -320,7 +335,7 @@ def playUSR(cardinfo, hand, deck, discards):#called when card is clicked
             playerwin()
         swap(card, hand, discards)
         PlaySound(play_sfx[randint(0,3)],  SND_FILENAME | SND_ASYNC)
-        print("you have played a", card[0], card[2])
+        notify("you played a {} {}.".format(card[0],card[2]) )
         bEND.config(state = NORMAL) #the end turn button will be valid
         bPUC.config(state = DISABLED)#cannot pick up a card after playing
         
@@ -351,7 +366,7 @@ def update(phand,deck,discards, *args):#called whenever a button is pressed
     phand = showHand(phand)
     
     comcardLabel = Label(ctr_right, text="Opponent's hand size:", font=("system", 16), relief="groove",borderwidth=2)
-    comcardLabel.grid(row=3,columnspan=5, pady =7, sticky= "s")
+    comcardLabel.grid(row=4,columnspan=5, pady =7, sticky= "s")
     
     if len(args) > 0:#only when COMs turn is up
         comHand = args[0]
@@ -397,7 +412,8 @@ def lose():#called when computer plays last card [OR user forfeits/quits]
         
     box = Toplevel(width= 250)
     box.title("Game Over!")
-    msg = Message(box, text="You have lost this game!")#create dialog box
+
+    msg = Message(box, bg= "darkgreen", text="You have lost this game!")#create dialog box
     msg.pack(ipadx=150)
     button = Button(box, text="Return to main menu", command=finish)#quit GUI & open splash
     button.pack(padx=12, pady=36)
