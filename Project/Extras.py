@@ -35,7 +35,7 @@ class Marquee(Canvas):
             y0 = int(self.winfo_height() / 2)
             self.coords("text", x0, y0)
         else:
-            self.move("text", -1, 0)
+            self.move("text", -2, 0)
 
         # do again in a few milliseconds
         self.after_id = self.after(int(1000 / self.fps), self.animate)
