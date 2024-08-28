@@ -4,7 +4,9 @@ from random import randint
 import simpleaudio
 from Extras import Marquee
 
-
+###################
+#    constants    #
+canPlayAfterPickingUp = False
 ###################
 
 def createdeck(bg1, bg2, bg3, bg4, bg5):
@@ -85,10 +87,11 @@ def notify(text):
 	ticker.set(text)
 	marquee.itemconfigure(marquee.text, text=ticker.get())
 
+##bg_gradient = PhotoImage(file="dist/gradient01.gif") ## probably remove this gradient bg
 
 def genGUI():
 	global header, cmid_frame, center, ctr_mid, ctr_right
-
+	##background_gradient = Label(root, image=bg_gradient).grid(rowspan=5)
 	# create all of the main containers
 	top_frame = Frame(root, bg='red3', relief="raised", width=450, height=50, pady=3)
 	center = Frame(root, bg='wheat', relief="raised", padx=85, pady=30)
@@ -138,11 +141,11 @@ def genGUI():
 
 cmid_frame, ctr_mid, ctr_right = genGUI()  # this function can't be called before pick() is defined
 
-brn = PhotoImage(file="b.gif")
-oge = PhotoImage(file="o.gif")
-pnk = PhotoImage(file="p.gif")
-prp = PhotoImage(file="pu.gif")
-wld = PhotoImage(file="w.gif")
+brn = PhotoImage(file="art/b.gif")
+oge = PhotoImage(file="art/o.gif")
+pnk = PhotoImage(file="art/p.gif")
+prp = PhotoImage(file="art/pu.gif")
+wld = PhotoImage(file="art/w.gif")
 deck = createdeck(brn, oge, pnk, prp, wld)
 
 # to create some familiarity and context, sounds 1-4 will be for the user & 5-7 for the com
@@ -177,6 +180,7 @@ def swap(card, fromm, to):
 		if card == fcard:
 			fromm.remove(card)
 			to.append(card)
+			return (fromm, to)
 	return (fromm, to)
 
 
@@ -263,13 +267,12 @@ def playCOM(hand, currentcards):  #when the COM chooses/places a card
 	bEND.config(state=DISABLED)
 	notify("the COM is thinking...")
 
-	root.after(4100, playCOMafterThinking,
-			   hand)  #some additional time is spent to make it more realistic and obvious that the computer is taking a turn
+	root.after(4100, playCOMafterThinking, hand)  #some additional time is spent to make it more realistic and obvious that the computer is taking a turn
 
 
 def playCOMafterThinking(hand):
 	global deck
-	currentcard = deck[-1]
+	currentcard = discards[-1]
 	comP2 = False
 	played = False
 	while played is False:
@@ -277,18 +280,22 @@ def playCOMafterThinking(hand):
 			randomNO = randint(0, len(deck) - 1)  #random card is chosen as deck[] is unshuffled
 			card = deck[randomNO]  #random card in the 'pick up' pile (deck[])
 			deck, hand = swap(card, deck, hand)
-			#print("COM has picked up a",card)
+			#print("COM has picked up a", card)
 			randomNO = randint(0, len(deck) - 1)  #random card is chosen as deck[] is unshuffled
 			card = deck[randomNO]  #random card in the 'pick up' pile (deck[])
 			deck, hand = swap(card, deck, hand)
-		#print("and a",card)
+			notify("COM has picked up 2 cards")
+			played = True
+			#print("and a", card)
+		if played and not canPlayAfterPickingUp:
+			break
 
 		for card in hand:
-			if card[2] == currentcard[2] or card[0] == currentcard[0] or card[0] == "wild" or currentcard[
-				0] == "wild":  #if the elements/colours match or is wildcard
+			if card[2] == currentcard[2] or card[0] == currentcard[0] or card[0] == "wild" or currentcard[0] == "wild":  #if the elements/colours match or is wildcard
 				swap(card, hand, discards)  #play this card
 				playsound(play_sfx[randint(4, 6)])
 				notify("COM has played a {} {}.".format(card[0], card[2]))
+				#print("since current card ={} {} ".format(currentcard[0],currentcard[2]))
 				if card[2] == "+2": comP2 = True
 
 				played = True
@@ -296,7 +303,7 @@ def playCOMafterThinking(hand):
 		if played is False:
 			#if no cards match, must pick up card
 			root.after(500)
-			print("COM had to pick up ", deck[-1])
+			notify("COM had to pick up!")
 			swap(deck[-1], deck, hand)
 			playsound(play_sfx[randint(4, 6)])
 			played = True
@@ -322,13 +329,13 @@ bPUC, bEND, bStart = Button(), Button(), Button()
 
 def gen_UIbuttons(playerHand):  #this was created to resolve parameter passing errors
 	global bPUC, bEND, marquee, discards, bStart
-	bPUC = Button(ctr_right, text="Pick up card", font=("system", 12), command=lambda: pick(playerHand, deck, discards),
-				  state=DISABLED)  #bPUC: button to Pick Up Card
+	bPUC = Button(ctr_right, text="Pick up card", font=("system", 12), command=lambda: pickup(playerHand, deck, discards),state=DISABLED)  #bPUC: button to Pick Up Card
 	bPUC.grid(row=2, column=0, pady=20, ipadx=20, ipady=10)
-	bStart = Button(ctr_right, text="Start", font=("system", 12), command=showHand(playerHand))
+
+	bStart = Button(ctr_right, text="Start", font=("system", 12), command=lambda: showHand(playerHand))
 	bStart.grid(row=2, column=1, pady=20, ipadx=20, ipady=10)
-	bEND = Button(ctr_right, text="End turn", font=("system", 12), command=lambda: playCOM(c1hand, deck),
-				  state=DISABLED)
+
+	bEND = Button(ctr_right, text="End turn", font=("system", 12), command=lambda: playCOM(c1hand, deck), state=DISABLED)
 	bEND.grid(row=2, column=2, pady=20, ipadx=20, ipady=10)
 
 	marquee = Marquee(ctr_right, text=ticker.get(), font=("system", 12), borderwidth=2, relief="sunken")
@@ -338,7 +345,7 @@ def gen_UIbuttons(playerHand):  #this was created to resolve parameter passing e
 #return (bStart, bEND, bPUC, marquee)
 
 
-def pick(hand, pile, currentcards):
+def pickup(hand, pile, currentcards):
 	top_card = currentcards[-1]
 	if top_card[2] == "+2":  #if the card played is a +2 card you must pick up twice
 		repetitions = 2  # # # maybe switch to making user press pick up twice?
@@ -348,11 +355,15 @@ def pick(hand, pile, currentcards):
 		randomNO = randint(0, len(pile) - 1)  #random card is chosen as deck[] is unshuffled
 		card = pile[randomNO]  #random card in the 'pick up' pile (deck[])
 		pile, hand = swap(card, pile, hand)
-		playsound(play_sfx[randint(0, 3)])  #PlaySound(take_sfx[randint(0,3)], SND_NOSTOP | SND_FILENAME | SND_ASYNC)
+		playsound(play_sfx[randint(0, 3)])
 		notify("you picked up {} {}. pile size: {}.".format(card[0], card[2], len(pile)))
 		root.after(500)
 
 	showHand(hand)
+
+	if not canPlayAfterPickingUp:
+		for card_button in cmid_frame.grid_slaves():  #disable all cards
+			card_button.config(state=DISABLED)
 	bEND.config(state=NORMAL)  #the end turn button will be valid
 
 
@@ -432,8 +443,7 @@ def update(*args):  #called whenever a button is pressed
 
 	else:
 		comHandSize = Label(ctr_right, bg="darkgreen", fg="yellow2", text=len(c1hand), font=("MS serif", 72),
-							relief="sunken", width=2, borderwidth=4).grid(row=5, columnspan=5, pady=5, sticky=S,
-																		  ipady=20)
+							relief="sunken", width=2, borderwidth=4).grid(row=5, columnspan=5, pady=5, sticky=S,ipady=20)
 
 	score = int(len(c1hand) * 100000 / len(discards))
 	#print("score",score)
@@ -441,10 +451,11 @@ def update(*args):  #called whenever a button is pressed
 
 
 def finish(msg_box):
-	global current_bgm_global, root
+	global current_bgm_global, root, marquee
 
 	current_bgm_global.stop()
 	msg_box.destroy()
+	marquee.destroy()
 	root.destroy()
 	import Crazy_Eights  #quit game and reopen splash
 
@@ -490,7 +501,7 @@ def rungame(fetch):  #will be called externally - from splash
 	current_bgm_global = playsound(bgm_songs[randint(0, 5)])  #
 
 	ctr_mid.config(scrollregion=ctr_mid.bbox("all"))
-	ctr_mid.mainloop()
+
 	root.update()
 	root.mainloop()
 
